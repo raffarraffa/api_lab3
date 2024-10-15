@@ -54,7 +54,7 @@ builder.Services.AddCors(options =>
         });
 });
 builder.Services.AddSingleton(new AuthService(issuer, audience, secretKey));
-builder.WebHost.UseUrls("http://localhost:8104", "http://*:8104");
+builder.WebHost.UseUrls("http://*:8104");
 builder.Services.AddControllers();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

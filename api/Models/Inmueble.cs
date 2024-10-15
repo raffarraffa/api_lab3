@@ -52,6 +52,9 @@ namespace api.Models
         [Column("descripcion")]
         public string? Descripcion { get; set; }
 
+        [Column("url_img")]
+        public string? UrlImg { get; set; }
+
         // atrib  navegación 
         public virtual TipoInmueble TipoInmueble { get; set; } = null!;
         //        public virtual Propietario Propietario { get; set; } = null!;
