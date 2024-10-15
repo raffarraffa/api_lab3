@@ -24,12 +24,12 @@ public class LoginController : ControllerBase
         //docs suo DTo pra tenr un modelo parcial de propietario
         var propietario = _context.Propietarios.FirstOrDefault(p => p.Email == loginDto.Email);
         Console.WriteLine(HashPassword.HashingPassword(loginDto.Password));
-        Console.WriteLine(propietario.Id);
+        Console.WriteLine(propietario?.Id);
         if (propietario == null || !HashPassword.isValidPassword(loginDto.Password, propietario.Password))
         {
-            Console.WriteLine($" login:{loginDto.Email} pass:{loginDto.Password} passProp: {propietario.Password}");
+            Console.WriteLine($" login:{loginDto.Email} pass:{loginDto.Password} passProp: {propietario?.Password}");
 
-            //    return Unauthorized();
+            return Unauthorized();
         }
 
 

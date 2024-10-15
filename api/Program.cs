@@ -1,7 +1,4 @@
 
-
-using api.Middlewares;
-
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("ConnectionProduction");
 var configuration = builder.Configuration;
@@ -9,7 +6,7 @@ var jwtConfig = configuration.GetSection("JWTAuthentication");
 var issuer = jwtConfig.GetValue<string>("Issuer") ?? "localhost";
 var audience = jwtConfig.GetValue<string>("Audience") ?? "localhost";
 var secretKey = jwtConfig.GetValue<string>("SecretKey") ?? throw new ArgumentNullException("La clave JWT no está configurada.");
-builder.WebHost.UseUrls("http://*:8104", "https://*:8105");
+builder.WebHost.UseUrls("http://*:8104");
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
