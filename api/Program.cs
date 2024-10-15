@@ -9,6 +9,7 @@ var jwtConfig = configuration.GetSection("JWTAuthentication");
 var issuer = jwtConfig.GetValue<string>("Issuer") ?? "localhost";
 var audience = jwtConfig.GetValue<string>("Audience") ?? "localhost";
 var secretKey = jwtConfig.GetValue<string>("SecretKey") ?? throw new ArgumentNullException("La clave JWT no está configurada.");
+builder.WebHost.UseUrls("http://*:8104", "https://*:8105");
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
@@ -41,6 +42,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // servicios 
+
 builder.Services.AddDbContext<ApiDbContext>(options => options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 // Configuración de CORS
 builder.Services.AddCors(options =>
@@ -54,7 +56,6 @@ builder.Services.AddCors(options =>
         });
 });
 builder.Services.AddSingleton(new AuthService(issuer, audience, secretKey));
-builder.WebHost.UseUrls("http://*:8104");
 builder.Services.AddControllers();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -76,7 +77,7 @@ var app = builder.Build();
 //docs  swager en producción /developer 
 app.UseSwagger();
 app.UseSwaggerUI();
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseCors("AllowAllOrigins");
 app.UseAuthentication();
 //app.UseMiddleware<JwtMiddleware>();
