@@ -46,8 +46,11 @@ public class LoginController : ControllerBase
             };
 
         var jtoken = _authService.GetToken(claims);
-
-        return Ok(new { Token = jtoken });
+        loginDto.Token = jtoken;
+        //    loginDto.Propietario = propietario;
+        Console.WriteLine(loginDto);
+        return Ok(jtoken);
+        //return Ok(loginDto);
     }
 }
 

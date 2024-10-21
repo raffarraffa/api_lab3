@@ -21,7 +21,7 @@ public class AuthService
             issuer: _issuer,
             audience: _audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddDays(10),
+            expires: DateTime.UtcNow.AddSeconds(3600),
             signingCredentials: creds);
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
