@@ -18,6 +18,6 @@ namespace api.Models
         public string Zona1 { get; set; } = null!;
 
         //  uno -> muuchos inmuebles
-        public virtual ICollection<Inmueble> Inmuebles { get; set; } = new List<Inmueble>();
+        //    public virtual ICollection<Inmueble> Inmuebles { get; set; } = new List<Inmueble>();
     }
 }

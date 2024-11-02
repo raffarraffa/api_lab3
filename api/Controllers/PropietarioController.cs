@@ -2,7 +2,7 @@ namespace api.Controllers;
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
-public class PropietarioController : ControllerBase
+public class PropietarioController : ControllerBase, IController<Propietario>
 {
     private readonly ApiDbContext _context;
     private readonly AuthService _authService;
@@ -11,8 +11,33 @@ public class PropietarioController : ControllerBase
         _context = context;
         _authService = authService;
     }
-    [HttpGet("perfil")]
-    public ActionResult<Propietario> Perfil()
+    [HttpPost("create")]
+    public ActionResult<Propietario> Crear([FromBody] Propietario propietario)
+    {
+        _context.Propietarios.Add(propietario);
+        _context.SaveChanges();
+        return Ok(propietario);
+    }
+
+    [HttpGet("todos")]
+    public ActionResult<List<Propietario>> ObtenerTodos()
+    {
+        return Ok(_context.Propietarios.ToList());
+    }
+    [HttpGet("todosactivos")]
+    public ActionResult<List<Propietario>> ObtenerActivos()
+    {
+        List<Propietario> propietarios = _context.Propietarios
+                                .Include(p => p.Inmuebles)
+                                .Where(p => p.Borrado == false)
+                                .ToList();
+        return Ok(propietarios);
+
+
+    }
+
+    [HttpGet("{id:int?}")]
+    public ActionResult<Propietario> Obtener(int? id)
     {
         var userId = _authService.GetUserClaims(User).GetValueOrDefault("UserId");
         if (!int.TryParse(userId, out int Id))
@@ -20,8 +45,34 @@ public class PropietarioController : ControllerBase
             return BadRequest("El UserId debe ser un número entero.");
         }
         var propietario = _context.Propietarios
-                                .Include(p => p.Inmuebles)
-                                .FirstOrDefault(p => p.Id == Id);
+                                    .Include(p => p.Inmuebles)
+                                        .ThenInclude(i => i.Zona)
+                                    .Include(p => p.Inmuebles)
+                                        .ThenInclude(i => i.TipoInmueble)
+                                    .Include(p => p.Inmuebles)
+                                        .ThenInclude(i => i.Ciudad)
+                                            .Where(p => p.Id == Id)
+                                                .Select(p => new
+                                                {
+                                                    p,
+                                                    Inmuebles = p.Inmuebles.Select(i => new
+                                                    {
+                                                        i.Id,
+                                                        i.Direccion,
+                                                        i.Uso,
+                                                        ZonaNombre = i.Zona.Zona1,
+                                                        CiudadNombre = i.Ciudad.NombreCiudad,
+                                                        TipoInmueble = i.TipoInmueble.Tipo
+
+                                                    })
+                                                })
+                                    .FirstOrDefault();
+        // var propietario = _context.Propietarios
+        //                         .Include(p => p.Inmuebles)
+        //                             .ThenInclude(i => i.TipoInmueble)
+        //                         .Include(p => p.Inmuebles)
+        //                             .ThenInclude(i => i.Zona)
+        //                         .FirstOrDefault(p => p.Id == Id);
         if (propietario == null)
         {
             Console.WriteLine("Propietario no encontrado");
@@ -29,7 +80,7 @@ public class PropietarioController : ControllerBase
         }
         return Ok(propietario);
     }
-    [HttpGet("perfilonly")]
+    [HttpGet("perfil")]
     public ActionResult<Propietario> PerfilSolo()
     {
         var userId = _authService.GetUserClaims(User).GetValueOrDefault("UserId");
@@ -43,13 +94,17 @@ public class PropietarioController : ControllerBase
             Console.WriteLine("Propietario no encontrado");
             return NotFound();
         }
+        propietario.Password = null;
+        propietario.Avatar = propietario.Id + "/avatares/" + propietario.Avatar;
         return Ok(propietario);
     }
 
     [HttpPatch("update")]
-    public ActionResult<Propietario> Update([FromBody] Propietario propietario)
+    public ActionResult<Propietario> Actualizar([FromBody] Propietario propietario)
     {
         var userId = _authService.GetUserClaims(User).GetValueOrDefault("UserId");
+        Console.WriteLine(userId);
+        Console.WriteLine(propietario);
         if (!int.TryParse(userId, out int Id))
         {
             return BadRequest();
@@ -58,6 +113,11 @@ public class PropietarioController : ControllerBase
         if (propDb == null)
         {
             return NotFound();
+        }
+        if (propietario.Password != null)
+        {
+            propietario.Password = HashPassword.HashingPassword(propietario.Password);
+            Console.WriteLine(propietario.Password);
         }
         propDb.Nombre = propietario.Nombre ?? propDb.Nombre;
         propDb.Apellido = propietario.Apellido ?? propDb.Apellido;
@@ -70,8 +130,25 @@ public class PropietarioController : ControllerBase
         return Ok(propDb);
     }
     [HttpPost("avatar")]
-
-    public ActionResult AvatarImg([FromForm] IFormFile file)
+    [HttpDelete]
+    public ActionResult<bool> EliminadoLogico([FromBody] int id)
+    {
+        var userId = _authService.GetUserClaims(User).GetValueOrDefault("UserId");
+        if (!int.TryParse(userId, out int Id))
+        {
+            return BadRequest();
+        }
+        Propietario propDb = _context.Propietarios.FirstOrDefault(p => p.Id == Id);
+        if (propDb == null)
+        {
+            return NotFound();
+        }
+        propDb.Borrado = true;
+        _context.SaveChanges();
+        return Ok(true);
+    }
+    [HttpPost]
+    public ActionResult GuardarFile([FromForm] IFormFile file)
     {
         var userId = _authService.GetUserClaims(User).GetValueOrDefault("UserId");
 

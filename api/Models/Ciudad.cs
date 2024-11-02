@@ -16,6 +16,6 @@ namespace api.Models
         [Column("ciudad")]
         public string NombreCiudad { get; set; } = null!;
         // inmuebles -> ciudad
-        public virtual ICollection<Inmueble> Inmuebles { get; set; } = new List<Inmueble>();
+        //    public virtual ICollection<Inmueble> Inmuebles { get; set; } = new List<Inmueble>();
     }
 }

@@ -33,9 +33,10 @@ public class Propietario
     [StringLength(15)]
     public string Telefono { get; set; } = null!;
 
-    [Required]
+    //    [Required]
     [Column("password")]
-    public string Password { get; set; } = null!;
+    //[NotMapped]
+    public string? Password { get; set; } = null!;
 
     [Column("avatar")]
     public string Avatar { get; set; } = null!;
@@ -43,6 +44,8 @@ public class Propietario
     [Required]
     [Column("borrado")]
     public bool Borrado { get; set; }
+    [Column("pass_restore")]
+    public string? PassRestore { get; set; }
     // realcionws        
     public virtual ICollection<Inmueble> Inmuebles { get; set; } = new HashSet<Inmueble>();
     public virtual ICollection<Contrato> Contratos { get; set; } = new HashSet<Contrato>();

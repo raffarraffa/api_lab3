@@ -1,7 +1,7 @@
 
 var builder = WebApplication.CreateBuilder(args);
-var connectionString = builder.Configuration.GetConnectionString("ConnectionProduction");
 var configuration = builder.Configuration;
+var connectionString = configuration.GetConnectionString("ConnectionProductionLocal");
 var jwtConfig = configuration.GetSection("JWTAuthentication");
 var issuer = jwtConfig.GetValue<string>("Issuer") ?? "localhost";
 var audience = jwtConfig.GetValue<string>("Audience") ?? "localhost";
@@ -37,10 +37,13 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
-
 // servicios 
-
-builder.Services.AddDbContext<ApiDbContext>(options => options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+//builder.Services.AddDbContext<ApiDbContext>(options => options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+builder.Services.AddDbContext<ApiDbContext>(options =>
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
+           .EnableSensitiveDataLogging()
+           .LogTo(Console.WriteLine, LogLevel.Information)
+);
 // Configuración de CORS
 builder.Services.AddCors(options =>
 {
@@ -53,6 +56,7 @@ builder.Services.AddCors(options =>
         });
 });
 builder.Services.AddSingleton(new AuthService(issuer, audience, secretKey));
+builder.Services.AddTransient<SendMailService>();
 builder.Services.AddControllers();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -69,9 +73,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 builder.Services.AddEndpointsApiExplorer();
-
-builder.Services.AddSwaggerGen();
+//builder.Services.AddSwaggerGen();
 var app = builder.Build();
+// app using
 app.Use(async (context, next) =>
 {
     // Registrar la solicitud
@@ -116,5 +120,4 @@ app.UseStaticFiles(new StaticFileOptions
 });
 app.UseAuthorization();
 app.MapControllers();
-
 app.Run();

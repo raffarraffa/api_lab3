@@ -18,5 +18,13 @@ public class ApiDbContext : DbContext
     public DbSet<TipoInmueble> TipoInmuebles { get; set; }
     public DbSet<Usuario> Usuarios { get; set; }
     public DbSet<Zona> Zonas { get; set; }
+    // protected override void OnModelCreating(ModelBuilder modelBuilder)
+    // {
+    //     modelBuilder.Entity<Inmueble>()
+    //         .HasOne(i => i.Ciudad)
+    //         .WithMany(c => c.Inmuebles)
+    //         .HasForeignKey(i => i.IdCiudad);
+
+    // }
 }
 
