@@ -1,12 +1,12 @@
 namespace api.Controllers;
-//[Authorize]
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
-public class InmuebleController : ControllerBase
+public class Inmueble_2Controller : ControllerBase
 {
     private readonly ApiDbContext _context;
     private readonly AuthService _authService;
-    public InmuebleController(ApiDbContext context, AuthService authService)
+    public Inmueble_2Controller(ApiDbContext context, AuthService authService)
     {
         _context = context;
         _authService = authService;
@@ -14,34 +14,13 @@ public class InmuebleController : ControllerBase
     [HttpGet("listar")]
     public ActionResult<List<Inmueble>> ObtenerTodos()
     {
-        //    var user = _authService.GetUserClaims(User).GetValueOrDefault("UserId");
         var user = Convert.ToInt32(_authService.GetUserClaims(User).GetValueOrDefault("UserId"));
-        var inmuebles = _context.Inmuebles
-                .Include(i => i.Ciudad)
+        Console.WriteLine("-------" + user);
+        var inmuebles = _context.Inmuebles2               
                 .Where(i => i.PropietarioId == user && i.Estado == "Disponible")
-                .OrderBy(i => i.Id)
-                .Select(i => new
-                {
-                    i.Id,
-                    i.Ambientes,
-                    i.Borrado,
-                    i.Coordenadas,
-                    i.Descripcion,
-                    i.Direccion,
-                    i.Estado,
-                    i.IdCiudad,
-                    i.IdTipo,
-                    i.IdZona,
-                    i.Precio,
-                    i.PropietarioId,
-                    i.UrlImg,
-                    i.Uso,
-                    ciudadNombre = i.Ciudad.NombreCiudad,
-                    tipo=i.TipoInmueble.Tipo
-
-                })
+                .OrderBy(i => i.Id)                
                 .ToList();
-                Console.WriteLine(inmuebles[0]);
+          //      Console.WriteLine(inmuebles[0]);
 
         return Ok(inmuebles);
     }
@@ -101,11 +80,11 @@ public class InmuebleController : ControllerBase
     }
 
 }
-// public class InmuebleController : ControllerBase, IController<Inmueble>
+// public class Inmueble_2Controller : ControllerBase, IController<Inmueble>
 // {
 //     private readonly ApiDbContext _context;
 //     private readonly AuthService _authService;
-//     public InmuebleController(ApiDbContext context, AuthService authService)
+//     public Inmueble_2Controller(ApiDbContext context, AuthService authService)
 //     {
 //         _context = context;
 //         _authService = authService;
