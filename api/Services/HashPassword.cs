@@ -9,7 +9,7 @@ public static class HashPassword
     }
 
     public static bool isValidPassword(string password, string hashedPassword)
-    {
-        return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
+    {       
+        return BCrypt.Net.BCrypt.Verify(password.Trim(), hashedPassword);
     }
 }

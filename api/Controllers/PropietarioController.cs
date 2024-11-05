@@ -45,27 +45,8 @@ public class PropietarioController : ControllerBase, IController<Propietario>
             return BadRequest("El UserId debe ser un número entero.");
         }
         var propietario = _context.Propietarios
-                                    .Include(p => p.Inmuebles)
-                                        .ThenInclude(i => i.Zona)
-                                    .Include(p => p.Inmuebles)
-                                        .ThenInclude(i => i.TipoInmueble)
-                                    .Include(p => p.Inmuebles)
-                                        .ThenInclude(i => i.Ciudad)
-                                            .Where(p => p.Id == Id)
-                                                .Select(p => new
-                                                {
-                                                    p,
-                                                    Inmuebles = p.Inmuebles.Select(i => new
-                                                    {
-                                                        i.Id,
-                                                        i.Direccion,
-                                                        i.Uso,
-                                                        ZonaNombre = i.Zona.Zona1,
-                                                        CiudadNombre = i.Ciudad.NombreCiudad,
-                                                        TipoInmueble = i.TipoInmueble.Tipo
-
-                                                    })
-                                                })
+                                    .Include(p => p.Inmuebles)                                        
+                                            .Where(p => p.Id == Id)                                                
                                     .FirstOrDefault();
         // var propietario = _context.Propietarios
         //                         .Include(p => p.Inmuebles)
@@ -129,7 +110,7 @@ public class PropietarioController : ControllerBase, IController<Propietario>
         _context.SaveChanges();
         return Ok(propDb);
     }
-    [HttpPost("avatar")]
+    
     [HttpDelete]
     public ActionResult<bool> EliminadoLogico([FromBody] int id)
     {
@@ -147,7 +128,7 @@ public class PropietarioController : ControllerBase, IController<Propietario>
         _context.SaveChanges();
         return Ok(true);
     }
-    [HttpPost]
+   [HttpPost]
     public ActionResult GuardarFile([FromForm] IFormFile file)
     {
         var userId = _authService.GetUserClaims(User).GetValueOrDefault("UserId");

@@ -3,7 +3,7 @@
 [Table("inmueble")]
 public class Inmueble
 {
-    [Key]
+ [Key]
     [Column("id")]
     public int Id { get; set; }
 
@@ -13,9 +13,8 @@ public class Inmueble
     [Column("uso")]
     public string Uso { get; set; } = null!;
 
-    [ForeignKey("TipoInmueble")]
-    [Column("id_tipo")]
-    public int IdTipo { get; set; }
+    [Column("ciudad")]
+    public string Ciudad { get; set; }=null!;    
 
     [Column("ambientes")]
     public sbyte Ambientes { get; set; }
@@ -31,37 +30,22 @@ public class Inmueble
     public int PropietarioId { get; set; }
 
     [Column("estado")]
-    public string Estado { get; set; } = null!;
+    public string Estado { get; set; } = "Retirado";    
 
-    [ForeignKey("Ciudad")]
-    [Column("id_ciudad")]
-    public int IdCiudad { get; set; }
-
-    [ForeignKey("Zona")]
-    [Column("id_zona")]
-    public int IdZona { get; set; }
-    [Required]
+   [Required]
     [Column("borrado")]
-    public bool Borrado { get; set; }
+    public bool Borrado { get; set; } = false;
 
     [Column("descripcion")]
     public string? Descripcion { get; set; }
 
     [Column("url_img")]
     public string? UrlImg { get; set; }
+    [Column("tipo")]
+    public string? Tipo { get; set; }
 
-    // atrib  navegación 
-    public virtual TipoInmueble? TipoInmueble { get; set; } = null!;
-    //        public virtual Propietario Propietario { get; set; } = null!;
-    public virtual Ciudad? Ciudad { get; set; } = null!;
-    public virtual Zona? Zona { get; set; } = null!;
 
-    // del uno -> muchos
     public virtual ICollection<Contrato> Contratos { get; set; } = new List<Contrato>();
-    // Propiedad virtual para el nombre de la ciudad
-
-
-    //public string? CiudadNombre { get; private set; }
 
 }
 
