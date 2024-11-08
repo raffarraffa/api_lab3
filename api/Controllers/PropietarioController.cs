@@ -185,6 +185,21 @@ public class PropietarioController : ControllerBase, IController<Propietario>
         _context.SaveChanges();
         return Ok(new { message = "Archivo subido con éxito", filePath });
     }
+    [HttpGet("todo")]
+     public ActionResult<List<Propietario>> GetTodos()
+     {
+    var userId = _authService.GetUserClaims(User).GetValueOrDefault("UserId");
+    var propietariosConContratosYPagos = _context.Propietarios
+    .Where(p => p.Id == 4)  
+    .Include(p => p.Inmuebles)
+        .ThenInclude(i => i.Contratos)
+            .ThenInclude(c => c.Pagos)
+    .Include(p => p.Inmuebles)
+        .ThenInclude(i => i.Contratos)
+            .ThenInclude(c => c.Inquilino)
+    .ToList();
+    return Ok(propietariosConContratosYPagos);
+     }
 
 }
 

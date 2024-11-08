@@ -73,6 +73,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 builder.Services.AddEndpointsApiExplorer();
+/*
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+    });
+  */  
+
 //builder.Services.AddSwaggerGen();
 var app = builder.Build();
 // app using

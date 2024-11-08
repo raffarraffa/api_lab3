@@ -53,6 +53,9 @@ namespace api.Models
         [Column("editado_fecha")]
         public DateTime? EditadoFecha { get; set; }
 
+        [Column("propietario_id")]
+        public int PropietarioId  {get; set; }
+
         // attribe navegacion
         public virtual Inquilino Inquilino { get; set; } = null!;
         public virtual Inmueble Inmueble { get; set; } = null!;

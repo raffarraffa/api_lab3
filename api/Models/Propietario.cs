@@ -51,11 +51,10 @@ public class Propietario
     public virtual ICollection<Contrato> Contratos { get; set; } = new HashSet<Contrato>();
 
     public string toString()
-
     {
         return $"{Id} {Nombre} {Apellido} {Dni} {Email} {Password} {Avatar} {Borrado}";
     }
 
-    //    public virtual ICollection<Inmueble> Inmuebles { get; set; } = new HashSet<Inmueble>();
+   // public virtual ICollection<Inmueble> Inmuebles { get; set; } = new HashSet<Inmueble>();
 }
 

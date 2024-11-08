@@ -36,6 +36,6 @@ namespace api.Models
         [Column("borrado")]
         public bool Borrado { get; set; }
         // atrib navegaion uno->muchos
-        public virtual ICollection<Contrato> Contratos { get; set; } = new List<Contrato>();
+      //  public virtual ICollection<Contrato> Contratos { get; set; } = new List<Contrato>();
     }
 }

@@ -13,7 +13,7 @@ namespace api.Models
 
         [Required]
         [Column("id_contrato")]
-        public int IdContrato { get; set; }
+        public int ContratoId { get; set; }
 
         [Required]
         [Column("fecha_pago")]

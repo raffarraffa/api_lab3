@@ -27,14 +27,14 @@ public class Inmueble
 
     [ForeignKey("Propietario")]
     [Column("id_propietario")]
-    public int PropietarioId { get; set; }
+    public int? PropietarioId { get; set; }
 
     [Column("estado")]
-    public string Estado { get; set; } = "Retirado";    
+    public string? Estado { get; set; } = "Retirado";    
 
    [Required]
     [Column("borrado")]
-    public bool Borrado { get; set; } = false;
+    public bool? Borrado { get; set; } = false;
 
     [Column("descripcion")]
     public string? Descripcion { get; set; }
@@ -47,5 +47,14 @@ public class Inmueble
 
     public virtual ICollection<Contrato> Contratos { get; set; } = new List<Contrato>();
 
+    public override string ToString()
+{
+    return $"Id: {Id}, Direccion: {Direccion}, Uso: {Uso}, Ciudad: {Ciudad}, Ambientes: {Ambientes}, " +
+           $"Coordenadas: {Coordenadas}, Precio: {Precio?.ToString() ?? "N/A"}, PropietarioId: {PropietarioId}, " +
+           $"Estado: {Estado}, Borrado: {Borrado}, Descripcion: {Descripcion}, UrlImg: {UrlImg}, Tipo: {Tipo}";
 }
+
+
+}
+
 

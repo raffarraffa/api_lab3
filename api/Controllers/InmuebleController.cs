@@ -1,5 +1,6 @@
+using System.Text.Json;
 namespace api.Controllers;
-[Authorize]
+//[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class InmuebleController : ControllerBase
@@ -99,25 +100,78 @@ public ActionResult<Inmueble> Crear([FromBody] Inmueble inmueble)
         }
         return Ok(inmueble);
     }
+    
+[HttpPost("new")]
+public async Task<ActionResult> GuardarInmueble([FromForm] string? inmueble, [FromForm] IFormFile? imagen)
+{
+    var user = _authService.GetUserClaims(User).GetValueOrDefault("UserId");
+    if (!int.TryParse(user, out int userId))
+        return BadRequest("El Usuario no está identificado.");
 
-
-    [HttpPost("imagen")] 
-    public ActionResult GuardarFile([FromForm] IFormFile imagen)
-    {
-         if (imagen == null)
-    {
+    if (imagen == null)
         return BadRequest(new { message = "No se ha enviado la imagen." });
+
+    // validar si el archivo es una imagen
+    if (!Utils.IsImageValid(imagen, 2 * 1024 * 1024))
+        return BadRequest("El archivo enviado no es una imagen válida.");
+
+    // deserializar el JSON del inmueble
+    var inmuebleDto = JsonSerializer.Deserialize<InmuebleDto>(inmueble);    
+ 
+    //  nuevo nombre para el archivo de imagen
+    var newFileName = Utils.renameFile(imagen);        
+
+    // imagen al DTO
+    inmuebleDto.UrlImg = newFileName;
+    inmuebleDto.PropietarioId=userId;
+    var inmuebleNew = MapInmuebleDtoToInmueble(inmuebleDto);
+    Console.WriteLine(inmuebleNew.ToString()); 
+
+   // dir para guardar los archivos
+    var pathDir = Path.Combine(Directory.GetCurrentDirectory(), "files", userId.ToString());
+    // directorio si no existe
+        if (!Directory.Exists(pathDir)) 
+            Directory.CreateDirectory(pathDir);  
+    // Guardar la imagen en el disco
+    var filePath = Path.Combine(Directory.GetCurrentDirectory(), pathDir, newFileName);    
+    using (var stream = new FileStream(filePath, FileMode.Create))
+    {
+        await imagen.CopyToAsync(stream);
     }
 
+        // Guardar el inmueble en la base de datos
+        _context.Inmuebles.Add(inmuebleNew);
+        await _context.SaveChangesAsync();
+
+        // Retornar una respuesta adecuada
+        return Ok(new { message = "Inmueble guardado correctamente", inmueble });
+    
+
+}
+
+
+
+   
+
+    [HttpPost("new2")] 
+    public ActionResult GuardarFile2(
+        [FromForm(Name = "inmueble")] string inmuebleJson,
+        [FromForm(Name = "imagen")]  IFormFile? imagen)
+        {
+            if (imagen == null)
+                return BadRequest(new { message = "No se ha enviado la imagen." });
         try
-    {
-        Console.WriteLine("mierda 109");
-        return Ok(new { message = "éxasdtfgfito" });
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error: {ex.Message}");
-        return StatusCode(500, new { message = "Ocurrió un error en el servidor", error = ex.Message });
+        {
+            Inmueble inmueble2 = JsonSerializer.Deserialize<Inmueble>(inmuebleJson);
+            Console.WriteLine(inmueble2.Ambientes);
+            Console.WriteLine(Path.GetExtension(imagen.FileName));
+            return Ok(new { message = "éxasdtfgfito" });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+            return StatusCode(500, new { message = "Ocurrió un error en el servidor", error = ex.Message });
+        }
     }
          /*
         var headers = Request.Headers;
@@ -184,6 +238,37 @@ public ActionResult<Inmueble> Crear([FromBody] Inmueble inmueble)
             return StatusCode(500, new { message = "Ocurrió un error al guardar el archivo.", error = e.Message });
         } 
         */
+   
+
+// Métodos de mapeo manual
+    private InmuebleDto MapInmuebleToInmuebleDto(Inmueble inmueble)
+    {
+        return new InmuebleDto
+        {
+            Ambientes = inmueble.Ambientes,
+            Ciudad = inmueble.Ciudad,
+            Descripcion = inmueble.Descripcion,
+            Direccion = inmueble.Direccion,
+            Precio = inmueble.Precio,
+            Tipo = inmueble.Tipo,
+            Uso = inmueble.Uso,
+            UrlImg = inmueble.UrlImg
+        };
     }
 
+    private Inmueble MapInmuebleDtoToInmueble(InmuebleDto inmuebleDto)
+    {
+        return new Inmueble
+        {
+            Ambientes = inmuebleDto.Ambientes,
+            Ciudad = inmuebleDto.Ciudad,
+            Descripcion = inmuebleDto.Descripcion,
+            Direccion = inmuebleDto.Direccion,
+            Precio = inmuebleDto.Precio,
+            Tipo = inmuebleDto.Tipo,
+            Uso = inmuebleDto.Uso,
+            UrlImg = inmuebleDto.UrlImg,
+            PropietarioId= inmuebleDto.PropietarioId
+        };
+    }
 }

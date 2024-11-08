@@ -5,11 +5,18 @@ public static class Utils
 {
     public static bool IsImageValid(IFormFile file, int maxFileSize = 2048 * 1024)
     {
-        string[] allowedContentTypes = { "image/jpeg", "image/png", "image/webp" };
+        string[] allowedContentTypes = {"image/jpeg", "image/png", "image/gif", "image/bmp", "image/webp"};
+        Console.WriteLine($" Utils Imagen Valida {file.ContentType}");
         if (!allowedContentTypes.Contains(file.ContentType)) return false;
         if (file.Length > maxFileSize) return false;
         return true;
     }
+    public static string renameFile(IFormFile file, string? prefix=null )
+        {
+            string  newFileName = $"{prefix}{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";         
+         return newFileName;
+        }
+
     //  public static void RedimensionarImagen(IFormFile file, string outputPath, int maxWidth, int maxHeight)
     //     {
     //         // Validar el archivo de entrada
