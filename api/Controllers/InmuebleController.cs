@@ -1,6 +1,6 @@
 using System.Text.Json;
 namespace api.Controllers;
-//[Authorize]
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class InmuebleController : ControllerBase
@@ -112,7 +112,7 @@ public async Task<ActionResult> GuardarInmueble([FromForm] string? inmueble, [Fr
         return BadRequest(new { message = "No se ha enviado la imagen." });
 
     // validar si el archivo es una imagen
-    if (!Utils.IsImageValid(imagen, 2 * 1024 * 1024))
+    if (!Utils.IsImageValid(imagen, 5 * 1024 * 1024))
         return BadRequest("El archivo enviado no es una imagen válida.");
 
     // deserializar el JSON del inmueble
@@ -128,7 +128,7 @@ public async Task<ActionResult> GuardarInmueble([FromForm] string? inmueble, [Fr
     Console.WriteLine(inmuebleNew.ToString()); 
 
    // dir para guardar los archivos
-    var pathDir = Path.Combine(Directory.GetCurrentDirectory(), "files", userId.ToString());
+    var pathDir = Path.Combine(Directory.GetCurrentDirectory(), "files");
     // directorio si no existe
         if (!Directory.Exists(pathDir)) 
             Directory.CreateDirectory(pathDir);  

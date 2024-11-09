@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace api.Models
 {
     [Table("contrato")]
-    public class Contrato
+    public class ContratoDto
     {
         [Key]
         [Column("id")]
@@ -21,10 +21,10 @@ namespace api.Models
         public int IdInmueble { get; set; }
 
         [Column("fecha_inicio")]
-        public DateTime? FechaInicio { get; set; }
+        public DateOnly? FechaInicio { get; set; }
 
         [Column("fecha_fin")]
-        public DateTime? FechaFin { get; set; }
+        public DateOnly? FechaFin { get; set; }
 
         [Column("fecha_efectiva")]
         public DateTime? FechaEfectiva { get; set; }
@@ -52,7 +52,7 @@ namespace api.Models
 
         [Column("editado_fecha")]
         public DateTime? EditadoFecha { get; set; }
-        
+
         [Column("propietario_id")]
         public int PropietarioId  {get; set; }
 

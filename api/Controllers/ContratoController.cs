@@ -1,6 +1,6 @@
 using System.Text.Json;
 namespace api.Controllers;
-//[Authorize]
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class ContratoController : ControllerBase
@@ -13,12 +13,12 @@ public class ContratoController : ControllerBase
         _authService = authService;
     }
     [HttpGet("listar")]
-    public ActionResult<List<Contrato>> ObtenerTodos(int? id )
+    public ActionResult<List<Contrato>> ObtenerTodos()
     {
         var user = Convert.ToInt32(_authService.GetUserClaims(User).GetValueOrDefault("UserId"));
-        var fechaActual = DateOnly.FromDateTime(DateTime.Now);
+        var fechaActual = DateTime.Now;
         var inmueblesContratos = _context.Contratos
-                                  .Where(c => c.PropietarioId == id && c.FechaInicio <= fechaActual && c.FechaFin >= fechaActual)
+                                  .Where(c => c.PropietarioId == user && c.FechaInicio <= fechaActual && c.FechaFin >= fechaActual)
                                   .Include(c => c.Pagos )
                                   .Include(c => c.Inquilino)
                                   .ToList();  
