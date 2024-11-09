@@ -28,6 +28,7 @@ global using System.ComponentModel.DataAnnotations.Schema;
 global using api.Services;
 //global using api.Controllers;
 global using api.Models;
+global using api.Dtos;
 global using api.Data;
 global using api.Interfaces;
 //global using api.Middlewares;

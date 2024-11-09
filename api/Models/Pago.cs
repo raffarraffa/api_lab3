@@ -17,7 +17,7 @@ namespace api.Models
 
         [Required]
         [Column("fecha_pago")]
-        public DateOnly FechaPago { get; set; }
+        public DateTime FechaPago { get; set; }
 
         [Required]
         [Column("importe")]
