@@ -36,31 +36,7 @@ public class PropietarioController : ControllerBase, IController<Propietario>
 
     }
 
-    [HttpGet("{id:int?}")]
-    public ActionResult<Propietario> Obtener(int? id)
-    {
-        var userId = _authService.GetUserClaims(User).GetValueOrDefault("UserId");
-        if (!int.TryParse(userId, out int Id))
-        {
-            return BadRequest("El UserId debe ser un número entero.");
-        }
-        var propietario = _context.Propietarios
-                                    .Include(p => p.Inmuebles)                                        
-                                            .Where(p => p.Id == Id)                                                
-                                    .FirstOrDefault();
-        // var propietario = _context.Propietarios
-        //                         .Include(p => p.Inmuebles)
-        //                             .ThenInclude(i => i.TipoInmueble)
-        //                         .Include(p => p.Inmuebles)
-        //                             .ThenInclude(i => i.Zona)
-        //                         .FirstOrDefault(p => p.Id == Id);
-        if (propietario == null)
-        {
-            Console.WriteLine("Propietario no encontrado");
-            return NotFound();
-        }
-        return Ok(propietario);
-    }
+  
     [HttpGet("perfil")]
     public ActionResult<Propietario> PerfilSolo()
     {
@@ -80,8 +56,8 @@ public class PropietarioController : ControllerBase, IController<Propietario>
         return Ok(propietario);
     }
 
-    [HttpPatch("update")]
-    public ActionResult<Propietario> Actualizar([FromBody] Propietario propietario)
+    [HttpPatch("update1")]
+    public ActionResult<Propietario> Actualizar1([FromBody] Propietario propietario)
     {
         var userId = _authService.GetUserClaims(User).GetValueOrDefault("UserId");
         Console.WriteLine(userId);
@@ -95,7 +71,8 @@ public class PropietarioController : ControllerBase, IController<Propietario>
         {
             return NotFound();
         }
-        if (propietario.Password != null)
+        propietario.Password=propietario.Password?.Trim();
+        if (propietario.Password != null && propietario.Password.Length > 3)
         {
             propietario.Password = HashPassword.HashingPassword(propietario.Password);
             Console.WriteLine(propietario.Password);
@@ -110,6 +87,71 @@ public class PropietarioController : ControllerBase, IController<Propietario>
         _context.SaveChanges();
         return Ok(propDb);
     }
+
+    [HttpPatch("update")]
+        public ActionResult<Propietario> Actualizar([FromBody] Propietario propietario)
+        {
+            var userId = _authService.GetUserClaims(User).GetValueOrDefault("UserId");
+            if (!int.TryParse(userId, out int Id))
+            {
+                return BadRequest();
+            }
+
+            // Buscar al propietario en la base de datos
+            Propietario? propDb = _context.Propietarios.FirstOrDefault(p => p.Id == Id);
+            if (propDb == null)
+            {
+                return NotFound();
+            }
+
+            // Actualizar solo los campos que han cambiado
+            if (!string.IsNullOrEmpty(propietario.Nombre) && propDb.Nombre != propietario.Nombre)
+            {
+                propDb.Nombre = propietario.Nombre;
+            }
+
+            if (!string.IsNullOrEmpty(propietario.Apellido) && propDb.Apellido != propietario.Apellido)
+            {
+                propDb.Apellido = propietario.Apellido;
+            }
+
+            if (!string.IsNullOrEmpty(propietario.Dni) && propDb.Dni != propietario.Dni)
+            {
+                propDb.Dni = propietario.Dni;
+            }
+
+            if (!string.IsNullOrEmpty(propietario.Email) && propDb.Email != propietario.Email)
+            {
+                propDb.Email = propietario.Email;
+            }
+
+            if (!string.IsNullOrEmpty(propietario.Telefono) && propDb.Telefono != propietario.Telefono)
+            {
+                propDb.Telefono = propietario.Telefono;
+            }
+
+            // Verificar si la contraseña fue proporcionada y es diferente a la actual
+            propietario.Password = propietario.Password?.Trim();
+            if (!string.IsNullOrEmpty(propietario.Password) && propietario.Password.Length > 3)
+            {
+                string hashedPassword = HashPassword.HashingPassword(propietario.Password);
+                if (propDb.Password != hashedPassword)
+                {
+                    propDb.Password = hashedPassword;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(propietario.Avatar) && propDb.Avatar != propietario.Avatar)
+            {
+                propDb.Avatar = propietario.Avatar;
+            }
+
+            // Guardar los cambios en la base de datos
+            _context.SaveChanges();
+
+            return Ok(propDb);
+        }
+
     
     [HttpDelete]
     public ActionResult<bool> EliminadoLogico([FromBody] int id)
