@@ -25,7 +25,7 @@ public async Task<ActionResult<List<ContratoDto>>> ObtenerContratos()
                                     .Where(c => c.Borrado == false) 
                                     .Include(c => c.Inmueble) 
                                     .Include(c => c.Inquilino)
-                                     .Include(c => c.Pagos.OrderBy(p => p.Id)) 
+                                    .Include(c => c.Pagos.OrderBy(p => p.Id)) 
                                     .ToListAsync();
         var contratosDto = contratos.Select(c => new ContratoDto
         {
@@ -51,7 +51,8 @@ public async Task<ActionResult<List<ContratoDto>>> ObtenerContratos()
                 Id = c.Inquilino.Id,
                 Nombre = c.Inquilino.Nombre,
                 Apellido = c.Inquilino.Apellido,
-                Email = c.Inquilino.Email
+                Email = c.Inquilino.Email,
+                Telefono = c.Inquilino.Telefono
             },
             Pagos = c.Pagos.Select(p => new PagoDto
             {

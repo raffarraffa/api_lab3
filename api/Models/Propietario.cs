@@ -52,7 +52,7 @@ public class Propietario
 
     public string toString()
     {
-        return $"{Id} {Nombre} {Apellido} {Dni} {Email} {Password} {Avatar} {Borrado}";
+        return $"{Id} {Nombre} {Apellido} {Dni} {Email} {Password} {Avatar} {Borrado} : {PassRestore}";
     }
 
    // public virtual ICollection<Inmueble> Inmuebles { get; set; } = new HashSet<Inmueble>();

@@ -59,7 +59,7 @@ public class LoginController : ControllerBase
         //return Ok(loginDto);
     }
     [HttpPost("passwordlost")]
-    public IActionResult PasswordLostdddd([FromBody] LoginDto loginDto)
+    public IActionResult PasswordLost([FromBody] LoginDto loginDto)
     {
         if (loginDto.Password == null || loginDto.Email == null)
         {
@@ -70,42 +70,55 @@ public class LoginController : ControllerBase
         {
             return NotFound();
         }
-        // creo json con  la contraseña y el timestamp
+        var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, propietario.Nombre),
+                new Claim("UserId", propietario.Id.ToString()),
+                new Claim("Email", propietario.Email)
+            };
+
+        var jtoken = _authService.GetToken(claims);
+
+
         var restorePass = new
         {
             pass = HashPassword.HashingPassword(loginDto.Password),
             timestamp = ((DateTimeOffset)DateTime.UtcNow.AddHours(1)).ToUnixTimeSeconds()
         };
-        Console.WriteLine(restorePass);
-        Console.WriteLine(((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds());
+
         long lastSixDigits = restorePass.timestamp % 1000000;
-        Console.WriteLine(lastSixDigits);
-        Console.WriteLine(loginDto.Email);
-        propietario.PassRestore = JsonSerializer.Serialize(restorePass);
+        propietario.PassRestore = HashPassword.HashingPassword(lastSixDigits.ToString());
         _context.SaveChanges();
-        // string email = propietario.Email;
-        // if (string.IsNullOrEmpty(email))
-        // {
-        //     return BadRequest(new { message = "El correo electrónico es requerido." });
-        // }
-        string body = $"Restaure su cuenta: use el password ingresado en la aplicacion, \n Luego le solicitara este Token de  6 digitos: {lastSixDigits} \n Si Ud. no solicito este token, ignore este correo, Ignorelo, su cuenta esta seguro. ";
+        string body = @$"
+                <p>POPO Restaure su cuenta: use el password ingresado en la aplicación y luego introduzca este token de 6 dígitos: {lastSixDigits}.</p>
+                <p>Si usted no solicitó este token, ignore este correo. Su cuenta está segura.</p>
+                <p>Para restaurar su cuenta, siga este <a href='http://localhost:8104/api/login/restore?token=' {jtoken}> enlace de restauración</a> desde el dispositivo utilizado para la solicitud.</p>";
         _sendMailService.SendMail(loginDto.Email, "Recupero password", body);
         return Ok(restorePass);
     }
+    [Authorize]
     [HttpPost("acceptrestore")]
     public IActionResult AcceptRestore([FromBody] LoginDto loginDto)
     {
-        string body = loginDto.Email + "-" + loginDto.Password;
-        return Ok(new { msg = body });
+       
+        var user = _authService.GetUserClaims(User).GetValueOrDefault("UserId");         
+        if (!int.TryParse(user, out int userId))
+            return BadRequest("El Usuario no está identificado.");
+        Console.WriteLine(106);
 
-        var propietario = _context.Propietarios.FirstOrDefault(p => p.Email == loginDto.Email);
-        if (propietario == null)
-        {
+        var propietario = _context.Propietarios.FirstOrDefault(p => p.Id == userId);        
+        if(propietario==null)
             return NotFound();
-        }
-        propietario.PassRestore = null;
-        _context.SaveChanges();
-        //return Ok(propietario);
+        Console.WriteLine(111);            
+        
+        if(propietario.PassRestore==null)
+            return UnprocessableEntity("'Otp' nulo.");
+        if(!HashPassword.isValidPassword(loginDto.Otp.ToString(), propietario.PassRestore))
+             return Unauthorized(new {msg="otp invalida"});        
+        Console.WriteLine(119);
+         propietario.PassRestore = null;
+        _context.SaveChanges();     
+        return Ok(propietario);
     }
 
     [HttpPost("passwordrestore")]
@@ -116,32 +129,40 @@ public class LoginController : ControllerBase
         {
             return NotFound();
         }
-        // creo json con  la contraseña y el timestamp
+         var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, propietario.Nombre),
+                new Claim("UserId", propietario.Id.ToString()),
+                new Claim("Email", propietario.Email)
+            };
+
+        var jtoken = _authService.GetToken(claims);
+          
         var restorePass = new
         {
             pass = HashPassword.HashingPassword(loginDto.Password),
             timestamp = ((DateTimeOffset)DateTime.UtcNow.AddHours(1)).ToUnixTimeSeconds()
         };
-        Console.WriteLine(restorePass);
-        Console.WriteLine(((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds());
-        long lastSixDigits = restorePass.timestamp % 1000000;
-        Console.WriteLine(lastSixDigits);
-        Console.WriteLine(loginDto.Email);
 
-        // if (string.IsNullOrEmpty(email))
-        // {
-        //     return BadRequest(new { message = "El correo electrónico es requerido." });
-        // }
-        string body = @$"Restaure su cuenta: use el password ingresado en la aplicacion, y luego le solicitara este Token de  6 digitos : {lastSixDigits} \n 
-                        Si Ud. no solcito este token, ignore este correo, Ignorelo, su cuenta esta seguro. 
-                        Para restaurar su cuenta,  siga este link desde el dispositivo que utilizo para pedido la  restauracion http://localhost:8104/api/login/restore  ";
+        long lastSixDigits = restorePass.timestamp % 1000000;
+        var otpHash= HashPassword.HashingPassword(lastSixDigits.ToString());
+        Console.WriteLine($"{otpHash} hash maldito");
+        propietario.PassRestore = otpHash;
+        _context.SaveChanges();
+       
+        string body = @$"
+                <p>AAAA Restaure su cuenta: use el password ingresado en la aplicación y luego introduzca este token de 6 dígitos: {lastSixDigits}.</p>
+                <p>Si usted no solicitó este token, ignore este correo. Su cuenta está segura.</p>
+                <p>Para restaurar su cuenta, siga este <a href='http://localhost:8104/api/login/restore?token={jtoken}'> enlace de restauración</a> desde el dispositivo utilizado para la solicitud.</p>";
+
+        // string body = @$"Restaure su cuenta: use el password ingresado en la aplicacion, y luego le solicitara este Token de  6 digitos : {lastSixDigits}  {Environment.NewLine}
+        //                 Si Ud. no solcito este token, ignore este correo, Ignorelo, su cuenta esta seguro. 
+        //                 Para restaurar su cuenta,  siga este link desde el dispositivo que utilizo para pedido la  restauracion http://localhost:8104/api/login/restore  ";
 
         _sendMailService.SendMail(loginDto.Email, "Recupero password", body);
         string mensaje = $"Se envió código de acceso a {loginDto.Email}. \n Verifique en su bandeja de entrada o en la carpeta Correo No deseado.";
-        Console.WriteLine(mensaje);
         return Ok(new { msg = body });
-        // return Content(mensaje);
-        //   return Content(mensaje, "text/plain");
+
     }
 
 

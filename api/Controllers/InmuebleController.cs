@@ -26,45 +26,6 @@ public class InmuebleController : ControllerBase
                 .ToList();
         return Ok(inmuebles);
     }
-    
-    [HttpPost("crear")]
-public ActionResult<Inmueble> Crear([FromBody] Inmueble inmueble)
-{
-    Console.WriteLine(inmueble);
-    var user = Convert.ToInt32(_authService.GetUserClaims(User).GetValueOrDefault("UserId"));
-    inmueble.PropietarioId = user;
-
-    if (ModelState.IsValid)
-    {
-        _context.Inmuebles.Add(inmueble);
-
-        try
-        {
-            _context.SaveChanges();
-            
-             Console.WriteLine($"Inmueble creado con Id: {inmueble.Id}");
-
-            // Devuelve el objeto creado con un código 201 (Creado)
-            return CreatedAtAction(nameof(ObtenerPorId), new { id = inmueble.Id }, inmueble);
-               //return StatusCode(201, inmueble);
-        }
-        catch (MySqlConnector.MySqlException mysqlEx) when (mysqlEx.Message.Contains("Data truncated"))
-        {
-            Console.WriteLine(inmueble);
-            Console.WriteLine(inmueble);
-            // Mensaje específico para errores de truncamiento en columnas ENUM
-            return BadRequest("Uno de los valores enviados no coincide con los valores permitidos en la base de datos. Verifica los campos ENUM.");
-        }
-        catch (Exception ex)
-        {
-            // Captura de cualquier otro tipo de error
-            Console.WriteLine($"Error: {ex.Message}");
-            return StatusCode(500, "Ocurrió un error al procesar la solicitud.");
-        }
-    }
-
-    return BadRequest(ModelState);
-}
 
     [HttpDelete("{id:int?}")]
     public ActionResult<bool> EliminadoLogico(int id)
@@ -102,145 +63,79 @@ public ActionResult<Inmueble> Crear([FromBody] Inmueble inmueble)
     }
     
 [HttpPost("new")]
-public async Task<ActionResult> GuardarInmueble([FromForm] string? inmueble, [FromForm] IFormFile? imagen)
-{
+public async Task<ActionResult> GuardarInmueble([FromForm] string inmueble, [FromForm] IFormFile imagen)
+{  
+   
     var user = _authService.GetUserClaims(User).GetValueOrDefault("UserId");
     if (!int.TryParse(user, out int userId))
         return BadRequest("El Usuario no está identificado.");
 
-    if (imagen == null)
-        return BadRequest(new { message = "No se ha enviado la imagen." });
+    if (inmueble == null)
+        return BadRequest(new { message = "No se ha enviado el inmueble." });    
+
+    // if (imagen == null)
+    //     return BadRequest(new { message = "No se ha enviado la imagen." });    
 
     // validar si el archivo es una imagen
     if (!Utils.IsImageValid(imagen, 2 * 1024 * 1024))
         return BadRequest("El archivo enviado no es una imagen válida.");
 
     // deserializar el JSON del inmueble
-    var inmuebleDto = JsonSerializer.Deserialize<InmuebleDto>(inmueble);    
- 
-    //  nuevo nombre para el archivo de imagen
-    var newFileName = Utils.renameFile(imagen);        
-
-    // imagen al DTO
-    inmuebleDto.UrlImg = newFileName;
-    inmuebleDto.PropietarioId=userId;
-    var inmuebleNew = MapInmuebleDtoToInmueble(inmuebleDto);
-    Console.WriteLine(inmuebleNew.ToString()); 
-
-   // dir para guardar los archivos
-    var pathDir = Path.Combine(Directory.GetCurrentDirectory(), "files", userId.ToString());
-    // directorio si no existe
-        if (!Directory.Exists(pathDir)) 
-            Directory.CreateDirectory(pathDir);  
-    // Guardar la imagen en el disco
-    var filePath = Path.Combine(Directory.GetCurrentDirectory(), pathDir, newFileName);    
-    using (var stream = new FileStream(filePath, FileMode.Create))
+      var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true 
+        };
+     var inmuebleDto = JsonSerializer.Deserialize<InmuebleDto>(inmueble, options); 
+     Console.WriteLine(inmuebleDto.ToString());
+     if(inmuebleDto.Direccion.IsNullOrEmpty() || inmuebleDto.Ciudad.IsNullOrEmpty() || inmuebleDto.Descripcion.IsNullOrEmpty()|| inmuebleDto.Tipo.IsNullOrEmpty() || inmuebleDto.Uso.IsNullOrEmpty() || inmuebleDto.Precio==0)
+        return BadRequest("Alguin dato sesta fuera de rango");
+    try
     {
-        await imagen.CopyToAsync(stream);
-    }
-
-        // Guardar el inmueble en la base de datos
+        //  nuevo nombre para el archivo de imagen
+        var newFileName = Utils.renameFile(imagen);        
+        // dir para guardar los archivos
+        var pathDir = Path.Combine(Directory.GetCurrentDirectory(), "files","inmuebles" );
+        // directorio si no existe
+            if (!Directory.Exists(pathDir)) 
+                Directory.CreateDirectory(pathDir);  
+        // Guardar la imagen en el disco
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), pathDir, newFileName);    
+        using (var stream = new FileStream(filePath, FileMode.Create))
+             {
+                await imagen.CopyToAsync(stream);    
+             }
+        // nombre imagen al DTO
+        inmuebleDto.UrlImg = newFileName;
+        // porpeirtario id al dto
+        inmuebleDto.PropietarioId=userId;
+        var inmuebleNew = MapInmuebleDtoToInmueble(inmuebleDto);
+        
+        //inmueble a  base de datos
         _context.Inmuebles.Add(inmuebleNew);
-        await _context.SaveChangesAsync();
-
-        // Retornar una respuesta adecuada
+        await _context.SaveChangesAsync();        
         return Ok(new { message = "Inmueble guardado correctamente", inmueble });
+    } 
+    catch (UnauthorizedAccessException ex)
+    {
+        // ermisos de acceso
+        Console.WriteLine($"Error de permisos: {ex.Message}");
+    }
+    catch (IOException ex)
+    {
+        //  error de i/o
+            Console.WriteLine($"Error de entrada/salida: {ex.Message}");
+        }
+    catch (Exception ex)
+        {    
+            Console.WriteLine($"Error inesperado: {ex.Message}");
+        }   
+    return StatusCode(500, new{message="Error de servidor"});       
     
 
 }
+  
 
 
-
-   
-
-    [HttpPost("new2")] 
-    public ActionResult GuardarFile2(
-        [FromForm(Name = "inmueble")] string inmuebleJson,
-        [FromForm(Name = "imagen")]  IFormFile? imagen)
-        {
-            if (imagen == null)
-                return BadRequest(new { message = "No se ha enviado la imagen." });
-        try
-        {
-            Inmueble inmueble2 = JsonSerializer.Deserialize<Inmueble>(inmuebleJson);
-            Console.WriteLine(inmueble2.Ambientes);
-            Console.WriteLine(Path.GetExtension(imagen.FileName));
-            return Ok(new { message = "éxasdtfgfito" });
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error: {ex.Message}");
-            return StatusCode(500, new { message = "Ocurrió un error en el servidor", error = ex.Message });
-        }
-    }
-         /*
-        var headers = Request.Headers;
-    Console.WriteLine("Encabezados de la solicitud:");
-    foreach (var header in headers)
-    {
-        Console.WriteLine($"{header.Key}: {header.Value}");
-    }
-        // verifuicar  enviado un archivo
-        if (imagen == null || imagen.Length == 0){
-            Console.WriteLine("mierda 109");
-            return BadRequest("No se ha enviado ningún archivo.");
-        }
-
-        // validar imagen
-        if (!Utils.IsImageValid(imagen, 5 * 1024 * 1024)){
-            Console.WriteLine("mierda 115");
-            return BadRequest("El archivo enviado no es una imagen válida.");      
-        }
-        var _userId = _authService.GetUserClaims(User).GetValueOrDefault("UserId");
-
-        if (!int.TryParse(_userId, out int userId))
-            return BadRequest("Usuario inválido");
-                
-        Inmueble inmueble = _context.Inmuebles.FirstOrDefault(i => i.Id == id && i.PropietarioId == userId);
-
-        // verifica inmueble y si propietario es elquien sube la imagen
-        if (inmueble == null)
-            return BadRequest("Usuario o Inmueble inválido");
-
-        // dir para guardar los archivos
-        var pathDir = Path.Combine(Directory.GetCurrentDirectory(), "files", userId.ToString(), "inmuebles");
-
-        // directorio si no existe
-        if (!Directory.Exists(pathDir)) 
-            Directory.CreateDirectory(pathDir);  
-
-        // nuewvo nombre de imagen con un UUID
-        var newFileName = $"{Guid.NewGuid()}{Path.GetExtension(imagen.FileName)}";              
-        var newFilePath = Path.Combine(pathDir, newFileName);       
-
-        try
-        {
-            // savenuevo archivo
-            using (var stream = new FileStream(newFilePath, FileMode.Create))
-                imagen.CopyTo(stream);  
-            
-            // d3elete archivo viejo solo si s guarda nuevo
-            if (inmueble.UrlImg != null)
-            {
-                var pathOldFile = Path.Combine(pathDir, inmueble.UrlImg);
-                if (System.IO.File.Exists(pathOldFile))                 
-                    System.IO.File.Delete(pathOldFile);                    
-            }
-
-            // saveUrlImg en el inmueble
-            inmueble.UrlImg = newFileName;        
-            _context.SaveChanges();
-
-            return Ok(new { message = "Archivo subido con éxito", newFilePath, newFileName });
-        }
-        catch (Exception e)
-        {            
-            return StatusCode(500, new { message = "Ocurrió un error al guardar el archivo.", error = e.Message });
-        } 
-        */
-   
-
-// Métodos de mapeo manual
     private InmuebleDto MapInmuebleToInmuebleDto(Inmueble inmueble)
     {
         return new InmuebleDto
@@ -261,12 +156,12 @@ public async Task<ActionResult> GuardarInmueble([FromForm] string? inmueble, [Fr
         return new Inmueble
         {
             Ambientes = inmuebleDto.Ambientes,
-            Ciudad = inmuebleDto.Ciudad,
-            Descripcion = inmuebleDto.Descripcion,
-            Direccion = inmuebleDto.Direccion,
+            Ciudad = inmuebleDto.Ciudad.Trim(),
+            Descripcion = inmuebleDto.Descripcion.Trim(),
+            Direccion = inmuebleDto.Direccion.Trim(),
             Precio = inmuebleDto.Precio,
-            Tipo = inmuebleDto.Tipo,
-            Uso = inmuebleDto.Uso,
+            Tipo = inmuebleDto.Tipo.Trim(),
+            Uso = inmuebleDto.Uso.Trim(),
             UrlImg = inmuebleDto.UrlImg,
             PropietarioId= inmuebleDto.PropietarioId
         };

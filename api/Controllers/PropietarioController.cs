@@ -11,32 +11,7 @@ public class PropietarioController : ControllerBase, IController<Propietario>
         _context = context;
         _authService = authService;
     }
-    [HttpPost("create")]
-    public ActionResult<Propietario> Crear([FromBody] Propietario propietario)
-    {
-        _context.Propietarios.Add(propietario);
-        _context.SaveChanges();
-        return Ok(propietario);
-    }
-
-    [HttpGet("todos")]
-    public ActionResult<List<Propietario>> ObtenerTodos()
-    {
-        return Ok(_context.Propietarios.ToList());
-    }
-    [HttpGet("todosactivos")]
-    public ActionResult<List<Propietario>> ObtenerActivos()
-    {
-        List<Propietario> propietarios = _context.Propietarios
-                                .Include(p => p.Inmuebles)
-                                .Where(p => p.Borrado == false)
-                                .ToList();
-        return Ok(propietarios);
-
-
-    }
-
-  
+    
     [HttpGet("perfil")]
     public ActionResult<Propietario> PerfilSolo()
     {
@@ -52,42 +27,9 @@ public class PropietarioController : ControllerBase, IController<Propietario>
             return NotFound();
         }
         propietario.Password = null;
-        propietario.Avatar = propietario.Id + "/avatares/" + propietario.Avatar;
+        //propietario.Avatar = propietario.Id + "/avatares/" + propietario.Avatar;
         return Ok(propietario);
     }
-
-    [HttpPatch("update1")]
-    public ActionResult<Propietario> Actualizar1([FromBody] Propietario propietario)
-    {
-        var userId = _authService.GetUserClaims(User).GetValueOrDefault("UserId");
-        Console.WriteLine(userId);
-        Console.WriteLine(propietario);
-        if (!int.TryParse(userId, out int Id))
-        {
-            return BadRequest();
-        }
-        Propietario propDb = _context.Propietarios.FirstOrDefault(p => p.Id == Id);
-        if (propDb == null)
-        {
-            return NotFound();
-        }
-        propietario.Password=propietario.Password?.Trim();
-        if (propietario.Password != null && propietario.Password.Length > 3)
-        {
-            propietario.Password = HashPassword.HashingPassword(propietario.Password);
-            Console.WriteLine(propietario.Password);
-        }
-        propDb.Nombre = propietario.Nombre ?? propDb.Nombre;
-        propDb.Apellido = propietario.Apellido ?? propDb.Apellido;
-        propDb.Dni = propietario.Dni ?? propDb.Dni;
-        propDb.Email = propietario.Email ?? propDb.Email;
-        propDb.Telefono = propietario.Telefono ?? propDb.Telefono;
-        propDb.Password = propietario.Password ?? propDb.Password;
-        propDb.Avatar = propietario.Avatar ?? propDb.Avatar;
-        _context.SaveChanges();
-        return Ok(propDb);
-    }
-
     [HttpPatch("update")]
         public ActionResult<Propietario> Actualizar([FromBody] Propietario propietario)
         {
@@ -97,14 +39,15 @@ public class PropietarioController : ControllerBase, IController<Propietario>
                 return BadRequest();
             }
 
-            // Buscar al propietario en la base de datos
+     
             Propietario? propDb = _context.Propietarios.FirstOrDefault(p => p.Id == Id);
+            
             if (propDb == null)
             {
                 return NotFound();
             }
 
-            // Actualizar solo los campos que han cambiado
+            
             if (!string.IsNullOrEmpty(propietario.Nombre) && propDb.Nombre != propietario.Nombre)
             {
                 propDb.Nombre = propietario.Nombre;
@@ -129,8 +72,7 @@ public class PropietarioController : ControllerBase, IController<Propietario>
             {
                 propDb.Telefono = propietario.Telefono;
             }
-
-            // Verificar si la contraseña fue proporcionada y es diferente a la actual
+            
             propietario.Password = propietario.Password?.Trim();
             if (!string.IsNullOrEmpty(propietario.Password) && propietario.Password.Length > 3)
             {
@@ -139,94 +81,76 @@ public class PropietarioController : ControllerBase, IController<Propietario>
                 {
                     propDb.Password = hashedPassword;
                 }
-            }
-
-            if (!string.IsNullOrEmpty(propietario.Avatar) && propDb.Avatar != propietario.Avatar)
-            {
-                propDb.Avatar = propietario.Avatar;
-            }
-
-            // Guardar los cambios en la base de datos
+            }          
+            
             _context.SaveChanges();
 
             return Ok(propDb);
         }
-
-    
-    [HttpDelete]
-    public ActionResult<bool> EliminadoLogico([FromBody] int id)
+       
+   [HttpPatch("avatar")]
+    public async Task<ActionResult> GuardarFile([FromForm] IFormFile imagen)
     {
         var userId = _authService.GetUserClaims(User).GetValueOrDefault("UserId");
-        if (!int.TryParse(userId, out int Id))
-        {
-            return BadRequest();
-        }
-        Propietario propDb = _context.Propietarios.FirstOrDefault(p => p.Id == Id);
-        if (propDb == null)
-        {
-            return NotFound();
-        }
-        propDb.Borrado = true;
-        _context.SaveChanges();
-        return Ok(true);
-    }
-   [HttpPost]
-    public ActionResult GuardarFile([FromForm] IFormFile file)
-    {
-        var userId = _authService.GetUserClaims(User).GetValueOrDefault("UserId");
-
-        Console.WriteLine(userId);
-        if (!int.TryParse(userId, out int Id))
-        {
-            return BadRequest();
-        }
-
-
-        if (file == null || file.Length == 0)
-            return BadRequest("No se ha enviado ningún archivo.");
-        // valido imgen    
-        if (!Utils.IsImageValid(file, 5 * 1024 * 1024))
-            return BadRequest("El archivo enviado no es una imagen.");
-
-        // dir  donde guardar los archivos
-        var pathDir = Path.Combine(Directory.GetCurrentDirectory(), "files\\" + Id.ToString() + "\\avatares");
-
-        // ceo  directorio si no existe
-        if (!Directory.Exists(pathDir))
-        {
-            Directory.CreateDirectory(pathDir);
-        }
-        else
-        {
-            // delete archivos existentes en el directorio
-            var existingFiles = Directory.GetFiles(pathDir);
-            foreach (var existingFile in existingFiles)
-            {
-                System.IO.File.Delete(existingFile);
-            }
-        }
-        // cambio nombre y pongo un uuid para evitar el cacheo si la cambiaron
-
-        var newFileName = $"{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-        //var snakeFileName = $"{Path.GetFileNameWithoutExtension(file.newFileName).Replace(' ', '_')}"; // Reemplaza espacios con guiones bajos
-        string snakeFileName = newFileName.Replace(' ', '_');
-
-        //var newFileName = $"avatar_{userId}_{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-        var filePath = Path.Combine(pathDir, snakeFileName);
-
-        using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            file.CopyTo(stream);
-        }
+        Console.WriteLine(userId);        
+        if (!int.TryParse(userId, out int Id))        
+            return BadRequest("User no valido");
         Propietario propietario = _context.Propietarios.FirstOrDefault(p => p.Id == Id);
         if (propietario == null)
+                return NotFound("Propietario no encontrado.");
+        
+        if (imagen == null || imagen.Length == 0)
+            return BadRequest("No se ha enviado ningún archivo.");
+
+        if (!Utils.IsImageValid(imagen, 5 * 1024 * 1024))
+            return BadRequest("El archivo enviado no es una imagen Valida.");
+        try{    
+            // dir  donde guardar los archivos
+            var pathDir = Path.Combine(Directory.GetCurrentDirectory(), "files","avatares" );
+            var oldAvatar= propietario.Avatar;         
+            // ceo  directorio si no existe
+            if (!Directory.Exists(pathDir))
+                Directory.CreateDirectory(pathDir);
+            //  nuevo nombre para el archivo de imagen
+            var newFileName = Utils.renameFile(imagen);
+            // Guardar la imagen en el disco
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), pathDir, newFileName);    
+            using (var stream = new FileStream(filePath, FileMode.Create))
+                 {
+                    await imagen.CopyToAsync(stream);    
+                 } 
+        
+        propietario.Avatar = newFileName;
+         if (!string.IsNullOrEmpty(oldAvatar))
         {
-            return NotFound("Propietario no encontrado.");
+            var oldFilePath = Path.Combine(pathDir, oldAvatar);
+            if (System.IO.File.Exists(oldFilePath))
+            {
+                System.IO.File.Delete(oldFilePath);
+            }
         }
-        propietario.Avatar = snakeFileName;
+
         _context.SaveChanges();
+        
         return Ok(new { message = "Archivo subido con éxito", filePath });
     }
+      catch (UnauthorizedAccessException ex)
+    {
+        // ermisos de acceso
+        Console.WriteLine($"Error de permisos: {ex.Message}");
+    }
+    catch (IOException ex)
+    {
+        //  error de i/o
+            Console.WriteLine($"Error de entrada/salida: {ex.Message}");
+        }
+    catch (Exception ex)
+        {    
+            Console.WriteLine($"Error inesperado: {ex.Message}");
+        }   
+    return StatusCode(500, new{message="Error de servidor"});       
+    }
+
     [HttpGet("todo")]
      public ActionResult<List<Propietario>> GetTodos()
      {
