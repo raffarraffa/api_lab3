@@ -14,20 +14,20 @@ namespace api.Models
 
         [ForeignKey("Inquilino")]
         [Column("id_inquilino")]
-        public int IdInquilino { get; set; }
+        public int InquilinoId { get; set; }
 
         [ForeignKey("Inmueble")]
         [Column("id_inmueble")]
-        public int IdInmueble { get; set; }
+        public int InmuebleId { get; set; }
 
         [Column("fecha_inicio")]
-        public DateOnly? FechaInicio { get; set; }
+        public DateTime? FechaInicio { get; set; }
 
         [Column("fecha_fin")]
-        public DateOnly? FechaFin { get; set; }
+        public DateTime? FechaFin { get; set; }
 
         [Column("fecha_efectiva")]
-        public DateOnly? FechaEfectiva { get; set; }
+        public DateTime? FechaEfectiva { get; set; }
 
         [Column("monto")]
         public decimal? Monto { get; set; }
@@ -58,9 +58,10 @@ namespace api.Models
 
         // attribe navegacion
         public virtual Inquilino Inquilino { get; set; } = null!;
+
         public virtual Inmueble Inmueble { get; set; } = null!;
 
-        // realcion uno ->muchos
+        
         public virtual ICollection<Pago> Pagos { get; set; } = new List<Pago>();
     }
 }

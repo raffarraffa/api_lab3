@@ -2,8 +2,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace api.Models
-{
+namespace api.Models;
+
     [Table("inquilino")]
     public class Inquilino
     {
@@ -38,4 +38,4 @@ namespace api.Models
         // atrib navegaion uno->muchos
       //  public virtual ICollection<Contrato> Contratos { get; set; } = new List<Contrato>();
     }
-}
+

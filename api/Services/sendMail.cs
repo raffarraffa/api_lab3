@@ -16,7 +16,7 @@ namespace api.Services
             smtpServer = "smtp.gmail.com";
             smtpPort = 587;
             smtpUser = "lopezrafa@gmail.com";
-            smtpPass = "yphesceojagajyvu";
+            smtpPass = "lpll xbxc erof aypl";
         }
 
         public void SendMail(string toEmail, string subject, string body)
@@ -33,7 +33,8 @@ namespace api.Services
                     From = new MailAddress(smtpUser),
                     Subject = subject,
                     Body = body,
-                    IsBodyHtml = false,
+                    //IsBodyHtml = false,
+                    IsBodyHtml = true,
                 };
 
                 mailMessage.To.Add(toEmail);
