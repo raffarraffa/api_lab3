@@ -1,6 +1,5 @@
 using System.Text.Json;
 namespace api.Controllers;
-//[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class InmuebleController : ControllerBase
@@ -148,8 +147,7 @@ public  ActionResult<Inmueble> changeEstado(string estado, int id)
     
     Inmueble? inmueble = _context.Inmuebles.FirstOrDefault(i => i.Id == id && i.PropietarioId == userId);
     if (inmueble == null)
-        return NotFound($"Inmueble con ID {id} no encontrado.");
-       
+        return NotFound($"Inmueble con ID {id} no encontrado.");       
     inmueble.Estado = estado;
     try
         {
@@ -177,7 +175,6 @@ public  ActionResult<Inmueble> changeEstado(string estado, int id)
             UrlImg = inmueble.UrlImg
         };
     }
-
     private Inmueble MapInmuebleDtoToInmueble(InmuebleDto inmuebleDto)
     {
         return new Inmueble
