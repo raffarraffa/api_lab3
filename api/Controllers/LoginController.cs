@@ -82,5 +82,33 @@ public class LoginController : ControllerBase
         string mensaje = $"Se envió código de acceso a {loginDto.Email}. \n Verifique en su bandeja de entrada o en la carpeta Correo No deseado.";
         return Ok(new { msg = body });
     }
+  
+    [Authorize]
+    [HttpPost("acceptrestore")]
+    public IActionResult AcceptRestore([FromBody] LoginDto loginDto)
+    {
+       
+        var user = _authService.GetUserClaims(User).GetValueOrDefault("UserId");         
+        if (!int.TryParse(user, out int userId))
+            return BadRequest("El Usuario no está identificado.");
+        Console.WriteLine(106);
+
+        var propietario = _context.Propietarios.FirstOrDefault(p => p.Id == userId);
+        Console.WriteLine(userId);   
+        if(propietario==null)
+            return NotFound();
+        Console.WriteLine(111);            
+        
+        if(propietario.PassRestore==null)
+            return UnprocessableEntity("'Otp' nulo.");
+        if(!HashPassword.isValidPassword(loginDto.Otp.ToString(), propietario.PassRestore))
+             return Unauthorized(new {msg="otp invalida"});        
+        Console.WriteLine(119);
+         propietario.PassRestore = null;
+        _context.SaveChanges();     
+        return Ok(propietario);
+    }
+
+
 }
 
