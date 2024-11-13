@@ -82,7 +82,8 @@ public class LoginController : ControllerBase
         string mensaje = $"Se envió código de acceso a {loginDto.Email}. \n Verifique en su bandeja de entrada o en la carpeta Correo No deseado.";
         return Ok(new { msg = body });
     }
-  [Authorize]
+  
+    [Authorize]
     [HttpPost("acceptrestore")]
     public IActionResult AcceptRestore([FromBody] LoginDto loginDto)
     {
@@ -92,7 +93,8 @@ public class LoginController : ControllerBase
             return BadRequest("El Usuario no está identificado.");
         Console.WriteLine(106);
 
-        var propietario = _context.Propietarios.FirstOrDefault(p => p.Id == userId);        
+        var propietario = _context.Propietarios.FirstOrDefault(p => p.Id == userId);
+        Console.WriteLine(userId);   
         if(propietario==null)
             return NotFound();
         Console.WriteLine(111);            
