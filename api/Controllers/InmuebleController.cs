@@ -73,11 +73,11 @@ public async Task<ActionResult> GuardarInmueble([FromForm] string inmueble, [Fro
     if (inmueble == null)
         return BadRequest(new { message = "No se ha enviado el inmueble." });    
 
-    // if (imagen == null)
-    //     return BadRequest(new { message = "No se ha enviado la imagen." });    
+     if (imagen == null)
+         return BadRequest(new { message = "No se ha enviado la imagen." });    
 
     // validar si el archivo es una imagen
-    if (!Utils.IsImageValid(imagen, 2 * 1024 * 1024))
+    if (!Utils.IsImageValid(imagen, 5 * 1024 * 1024))
         return BadRequest("El archivo enviado no es una imagen válida.");
 
     // deserializar el JSON del inmueble
@@ -86,56 +86,83 @@ public async Task<ActionResult> GuardarInmueble([FromForm] string inmueble, [Fro
             PropertyNameCaseInsensitive = true 
         };
      var inmuebleDto = JsonSerializer.Deserialize<InmuebleDto>(inmueble, options); 
-     Console.WriteLine(inmuebleDto.ToString());
-     if(inmuebleDto.Direccion.IsNullOrEmpty() || inmuebleDto.Ciudad.IsNullOrEmpty() || inmuebleDto.Descripcion.IsNullOrEmpty()|| inmuebleDto.Tipo.IsNullOrEmpty() || inmuebleDto.Uso.IsNullOrEmpty() || inmuebleDto.Precio==0)
-        return BadRequest("Alguin dato sesta fuera de rango");
-    try
-    {
-        //  nuevo nombre para el archivo de imagen
-        var newFileName = Utils.renameFile(imagen);        
-        // dir para guardar los archivos
-        var pathDir = Path.Combine(Directory.GetCurrentDirectory(), "files","inmuebles" );
-        // directorio si no existe
-            if (!Directory.Exists(pathDir)) 
-                Directory.CreateDirectory(pathDir);  
-        // Guardar la imagen en el disco
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), pathDir, newFileName);    
-        using (var stream = new FileStream(filePath, FileMode.Create))
-             {
-                await imagen.CopyToAsync(stream);    
-             }
-        // nombre imagen al DTO
-        inmuebleDto.UrlImg = newFileName;
-        // porpeirtario id al dto
-        inmuebleDto.PropietarioId=userId;
-        var inmuebleNew = MapInmuebleDtoToInmueble(inmuebleDto);
         
-        //inmueble a  base de datos
-        _context.Inmuebles.Add(inmuebleNew);
-        await _context.SaveChangesAsync();        
-        return Ok(new { message = "Inmueble guardado correctamente", inmueble });
-    } 
-    catch (UnauthorizedAccessException ex)
-    {
-        // ermisos de acceso
-        Console.WriteLine($"Error de permisos: {ex.Message}");
-    }
-    catch (IOException ex)
-    {
-        //  error de i/o
-            Console.WriteLine($"Error de entrada/salida: {ex.Message}");
+        if(inmuebleDto.Direccion.IsNullOrEmpty() || inmuebleDto.Ciudad.IsNullOrEmpty() || inmuebleDto.Descripcion.IsNullOrEmpty()|| inmuebleDto.Tipo.IsNullOrEmpty() || inmuebleDto.Uso.IsNullOrEmpty() || inmuebleDto.Precio==0)
+            return BadRequest("Alguin dato sesta fuera de rango");
+        try
+        {
+            //  nuevo nombre para el archivo de imagen
+            var newFileName = Utils.renameFile(imagen);        
+            // dir para guardar los archivos
+            var pathDir = Path.Combine(Directory.GetCurrentDirectory(), "files","inmuebles" );
+            // directorio si no existe
+                if (!Directory.Exists(pathDir)) 
+                    Directory.CreateDirectory(pathDir);  
+            // Guardar la imagen en el disco
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), pathDir, newFileName);    
+            using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await imagen.CopyToAsync(stream);    
+                }
+            // nombre imagen al DTO
+            inmuebleDto.UrlImg = newFileName;
+            // porpeirtario id al dto
+            inmuebleDto.PropietarioId=userId;
+            var inmuebleNew = MapInmuebleDtoToInmueble(inmuebleDto);
+            
+            //inmueble a  base de datos
+            _context.Inmuebles.Add(inmuebleNew);
+            await _context.SaveChangesAsync();        
+            return Ok(new { message = "Inmueble guardado correctamente", inmueble });
+        } 
+        catch (UnauthorizedAccessException ex)
+        {
+            // ermisos de acceso
+            Console.WriteLine($"Error de permisos: {ex.Message}");
         }
-    catch (Exception ex)
-        {    
-            Console.WriteLine($"Error inesperado: {ex.Message}");
-        }   
-    return StatusCode(500, new{message="Error de servidor"});       
+        catch (IOException ex)
+        {
+            //  error de i/o
+                Console.WriteLine($"Error de entrada/salida: {ex.Message}");
+            }
+        catch (Exception ex)
+            {    
+                Console.WriteLine($"Error inesperado: {ex.Message}");
+            }   
+        return StatusCode(500, new{message="Error de servidor"});       
     
 
 }
   
 
-
+[HttpPatch("changeEstado/{id}/{estado}")]
+public  ActionResult<Inmueble> changeEstado(string estado, int id)
+{
+    
+    var user = _authService.GetUserClaims(User).GetValueOrDefault("UserId");
+    if (!int.TryParse(user, out int userId))
+        return BadRequest("El Usuario no está identificado.");
+    string estadoCap = char.ToUpper(estado[0]) + estado.Substring(1).ToLower();        
+    if (string.IsNullOrEmpty(estadoCap) || (estadoCap != "Retirado" && estadoCap !="Disponible" ))
+        return BadRequest("Petición incorecta en datos");
+    
+    Inmueble? inmueble = _context.Inmuebles.FirstOrDefault(i => i.Id == id && i.PropietarioId == userId);
+    if (inmueble == null)
+        return NotFound($"Inmueble con ID {id} no encontrado.");
+       
+    inmueble.Estado = estado;
+    try
+        {
+            _context.SaveChanges();
+        }
+        catch (Exception ex)
+        {
+        
+            return StatusCode(500, $"Ocurrió un error al guardar los cambios: {ex.Message}");
+        }      
+       
+    return Ok(inmueble);
+}
     private InmuebleDto MapInmuebleToInmuebleDto(Inmueble inmueble)
     {
         return new InmuebleDto
