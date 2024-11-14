@@ -16,7 +16,7 @@ namespace api.Services
             smtpServer = "smtp.gmail.com";
             smtpPort = 587;
             smtpUser = "lopezrafa@gmail.com";
-            smtpPass = "lpll xbxc erof aypl";
+            smtpPass = "xxxxxxxxxxxx";
         }
 
         public void SendMail(string toEmail, string subject, string body)
